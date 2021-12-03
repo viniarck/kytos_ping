@@ -4,6 +4,8 @@ from threading import Thread, Event
 from queue import Queue
 from uuid import uuid4
 from time import time
+import os
+from pathlib import Path
 
 from kytos.core import KytosEvent, KytosNApp, log
 from kytos.core.helpers import listen_to
@@ -47,12 +49,28 @@ class Main(KytosNApp):
             event = KytosEvent(name=event_name, content=content)
             self.controller.buffers.app.put(event)
 
-    def _update_reply(self) -> None:
+    def _write_replies_to_file(
+        self, output_file=os.environ.get("PING_OUTPUT_FILE", "results.csv")
+    ):
+        """Write replies to file."""
+        first_line = "id,value,time_diff\n"
+        with open(Path(__file__).parent / output_file, "w") as f:
+            f.write(first_line)
+            for content in self.replies.values():
+                f.write(f"{content['id']},{content['value']},{content['time_diff']}\n")
+
+    def _update_reply(
+        self,
+        max_records_to_write=int(os.environ.get("PING_MAX_RECORDS_TO_WRITE", 20000)),
+    ) -> None:
         """Update reply."""
         while not self.thread_ev.is_set():
             ev = self.result_queue.get()
             log.debug(f"got ev {ev.content}")
-            self.replies[ev.content["id"]] = ev
+            self.replies[ev.content["id"]] = ev.content
+            if len(self.replies) >= max_records_to_write:
+                self._write_replies_to_file()
+                self.thread_ev.set()
 
     @listen_to("kytos/pong.reply")
     def on_pong(self, event):
