@@ -50,9 +50,11 @@ class Main(KytosNApp):
             self.controller.buffers.app.put(event)
 
     def _write_replies_to_file(
-        self, output_file=os.environ.get("PING_OUTPUT_FILE", "results.csv")
+        self, output_file=os.environ.get("PING_OUTPUT_FILE", None)
     ):
         """Write replies to file."""
+        if not output_file:
+            return
         first_line = "id,value,time_diff\n"
         with open(Path(__file__).parent / output_file, "w") as f:
             f.write(first_line)
