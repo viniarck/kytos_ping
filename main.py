@@ -36,9 +36,9 @@ class Main(KytosNApp):
         event = KytosEvent(name=event_name, content=content)
         self.controller.buffers.app.put(event)
 
-    def publish_ping_many(self, n):
+    def publish_ping_many(self, n, event_name="kytos/ping.request"):
         """Publish ping."""
-        event_name = "kytos/ping.request"
+        event_name = event_name
         for i in range(n):
             content = {
                 "to": "pong",
@@ -89,7 +89,7 @@ class Main(KytosNApp):
         The execute method is called by the run method of KytosNApp class.
         Users shouldn't call this method directly.
         """
-        self.publish_ping_many(5000)
+        self.publish_ping_many(5000, "kytos/ping.request")
 
     def shutdown(self):
         """Shutdown routine of the NApp."""
